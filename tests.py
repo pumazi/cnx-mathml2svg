@@ -40,6 +40,7 @@ def load_data(file_name):
 
 SVG = load_data('test_data/svg.xml')
 
+UNBOUNDED_MATHML = load_data('test_data/unbounded_mathml.xml')
 
 class Test_Saxon(unittest.TestCase):
 
@@ -55,13 +56,12 @@ class Test_Saxon(unittest.TestCase):
         self.saxon = self._saxon
 
     def test_class_setup(self):
-        returned_svg = self.saxon.convert(MATHML).strip('\t\r\n ')
-        expected_svg = SVG.strip('\t\r\n ')
-        self.assertEqual(returned_svg, expected_svg)
+        pass
 
     def test_multiple_saxon_calls(self):
         for i in range(0, 10):
-            returned_svg = self.saxon.convert(MATHML).strip('\t\r\n ')
+            returned_svg,err = self.saxon.convert(MATHML)
+            returned_svg=returned_svg.strip('\t\r\n ')
             expected_svg = SVG.strip('\t\r\n ')
             self.assertEqual(returned_svg, expected_svg)
 
@@ -69,6 +69,18 @@ class Test_Saxon(unittest.TestCase):
         self.addCleanup(self.setUpClass)
         with self.assertRaises(CalledProcessError):
             self.saxon.convert(INVALID_MATHML)
+
+    def test_unbounded_mathml(self):
+#        self.addCleanup(self.setUpClass)
+#        with self.assertRaises(CalledProcessError):
+        (out,err)=self.saxon.convert(MATHML)
+        self.assertIn("LOG: INFO: MathML2SVG",err)
+        (out,err)=self.saxon.convert(UNBOUNDED_MATHML)
+        self.assertIn("LOG: INFO: MathML2SVG",err)
+        (out,err)=self.saxon.convert(MATHML)
+        self.assertIn("WARNING: Cannot determine bounding box for glyph",err) 
+        #self.saxon.convert(MATHML)
+
 
     @unittest.skip("Run this test to generate performance graphics")
     def test_performance_gain(self):

@@ -6,6 +6,7 @@
 # See LICENCE.txt for details.
 # ###
 import os
+import sys
 import subprocess
 from subprocess import CalledProcessError
 
@@ -31,11 +32,18 @@ def mathml2svg(mathml, settings=None):
     if settings is None:
         settings = get_current_registry().settings
     if sax is None:
-        sax = Saxon(saxon_path=settings['_saxon_jar_filepath'], math2svg_path=settings[
-                    '_mathml2svg_xsl_filepath'])
+        sax = Saxon(saxon_path=settings['_saxon_jar_filepath'],
+                    math2svg_path=settings['_mathml2svg_xsl_filepath'])
 
-    out = sax.convert(mathml)
+    (out,err) = sax.convert(mathml)
 
+    if "WARNING" in err:
+         sys.stderr.write(err)
+         if "Cannot determine bounding box for glyph" in err:
+             sax.stop()
+             sax = Saxon(saxon_path=settings['_saxon_jar_filepath'],
+                         math2svg_path=settings['_mathml2svg_xsl_filepath'])
+        
     parser = etree.XMLParser(recover=True)
     try:
         xml = etree.parse(BytesIO(out), parser)
